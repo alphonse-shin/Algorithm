@@ -1,0 +1,39 @@
+name: Move CodeTree folders into codetree/
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  move-codetree:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Move CodeTree folders
+        run: |
+          mkdir -p codetree
+
+          for dir in */ ; do
+            name="${dir%/}"
+
+            if [[ "$name" =~ ^[0-9]{6}$ ]]; then
+              mkdir -p "codetree/$name"
+              mv "$name"/* "codetree/$name/" 2>/dev/null || true
+              rmdir "$name" 2>/dev/null || true
+            fi
+          done
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Move CodeTree files into codetree/" || exit 0
+          git push
